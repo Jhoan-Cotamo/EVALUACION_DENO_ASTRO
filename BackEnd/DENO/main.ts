@@ -1,4 +1,4 @@
-import { Router} from ".Routes/ttt.ts";
+import { router} from "./Routes/routes_1.ts";
 import { Application } from "./dependencies/dependencias.ts";
 import { oakCors } from "./dependencies/dependencias.ts";
 
@@ -11,7 +11,7 @@ app.use(oakCors({
 }));
 
 
-const routes = [Router];
+const routes = [router];
 
 routes.forEach(router =>{
     app.use(router.routes());
