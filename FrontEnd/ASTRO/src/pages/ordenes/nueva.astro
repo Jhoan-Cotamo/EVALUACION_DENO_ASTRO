@@ -1,0 +1,164 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const [resClientes, resTecnicos] = await Promise.all([
+  apiFetch('/api/clientes', cookie),
+  apiFetch('/api/tecnicos', cookie),
+]);
+const clientes = resClientes.ok ? await resClientes.json() : [];
+const tecnicos = resTecnicos.ok ? await resTecnicos.json() : [];
+const tecnicosActivos = tecnicos.filter((t: any) => t.estado === 'Activo');
+---
+
+<DashboardLayout titulo="Nueva orden">
+
+  <div class="card" style="max-width:600px;">
+    <h2 class="form-titulo">Crear orden de servicio</h2>
+    <div id="alerta" class="alerta-oculta"></div>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <div class="campo">
+          <label for="id_cliente">Cliente *</label>
+          <select id="id_cliente" name="id_cliente" required>
+            <option value="">— Seleccionar cliente —</option>
+            {clientes.map((c: any) => (
+              <option value={c.id_cliente}>{c.nombre_completo} ({c.documento})</option>
+            ))}
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="id_equipo">Equipo *</label>
+          <select id="id_equipo" name="id_equipo" required disabled>
+            <option value="">— Primero selecciona un cliente —</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="id_tecnico">Técnico *</label>
+          <select id="id_tecnico" name="id_tecnico" required>
+            <option value="">— Seleccionar técnico —</option>
+            {tecnicosActivos.map((t: any) => (
+              <option value={t.id_tecnico}>{t.nombre} ({t.especialidad ?? 'General'})</option>
+            ))}
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="descripcion_problema">Descripción del problema</label>
+          <textarea id="descripcion_problema" name="descripcion_problema" rows="3"></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="2"></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="valor_estimado">Valor estimado ($)</label>
+          <input id="valor_estimado" name="valor_estimado" type="number" min="0" step="1000" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <a href="/ordenes" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btn-submit">Crear orden</button>
+      </div>
+    </form>
+  </div>
+
+</DashboardLayout>
+
+<script>
+  const form       = document.getElementById('form') as HTMLFormElement;
+  const alerta     = document.getElementById('alerta')!;
+  const btn        = document.getElementById('btn-submit') as HTMLButtonElement;
+  const selCliente = document.getElementById('id_cliente') as HTMLSelectElement;
+  const selEquipo  = document.getElementById('id_equipo')  as HTMLSelectElement;
+
+  function mostrar(msg: string, ok: boolean) {
+    alerta.textContent = msg;
+    alerta.className = ok ? 'alerta-ok' : 'alerta-error';
+  }
+
+  // Cargar equipos al seleccionar cliente
+  selCliente.addEventListener('change', async () => {
+    const idCliente = selCliente.value;
+    selEquipo.innerHTML = '<option value="">Cargando…</option>';
+    selEquipo.disabled = true;
+
+    if (!idCliente) {
+      selEquipo.innerHTML = '<option value="">— Primero selecciona un cliente —</option>';
+      return;
+    }
+
+    const res = await fetch(`/api/proxy/clientes/${idCliente}/equipos`);
+    const equipos = res.ok ? await res.json() : [];
+
+    if (equipos.length === 0) {
+      selEquipo.innerHTML = '<option value="">— Sin equipos registrados —</option>';
+    } else {
+      selEquipo.innerHTML = '<option value="">— Seleccionar equipo —</option>' +
+        equipos.map((e: any) =>
+          `<option value="${e.id_equipo}">${e.tipo_equipo} ${e.marca ?? ''} ${e.modelo ?? ''} (${e.numero_serie ?? 'sin serie'})</option>`
+        ).join('');
+      selEquipo.disabled = false;
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true; btn.textContent = 'Creando…';
+
+    const valor = (form.valor_estimado as HTMLInputElement).value;
+    const datos: Record<string, unknown> = {
+      id_cliente:           Number(selCliente.value),
+      id_equipo:            Number(selEquipo.value),
+      id_tecnico:           Number((form.id_tecnico as HTMLSelectElement).value),
+      descripcion_problema: (form.descripcion_problema as HTMLTextAreaElement).value.trim() || undefined,
+      observaciones:        (form.observaciones as HTMLTextAreaElement).value.trim() || undefined,
+      valor_estimado:       valor ? Number(valor) : 0,
+    };
+
+    if (!datos.id_cliente || !datos.id_equipo || !datos.id_tecnico) {
+      mostrar('Cliente, equipo y técnico son obligatorios.', false);
+      btn.disabled = false; btn.textContent = 'Crear orden';
+      return;
+    }
+
+    if (Number(datos.valor_estimado) < 0) {
+      mostrar('El valor estimado no puede ser negativo.', false);
+      btn.disabled = false; btn.textContent = 'Crear orden';
+      return;
+    }
+
+    const res  = await fetch('/api/proxy/ordenes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      mostrar(`Orden ${data.numero_orden} creada exitosamente. Redirigiendo…`, true);
+      setTimeout(() => window.location.href = '/ordenes', 1200);
+    } else {
+      mostrar(data.error ?? 'Error al crear la orden.', false);
+      btn.disabled = false; btn.textContent = 'Crear orden';
+    }
+  });
+</script>
+
+<style>
+  .form-titulo { font-size:16px; font-weight:600; color:#1e293b; margin-bottom:20px; }
+  .campos { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+  .form-footer { display:flex; gap:10px; justify-content:flex-end; }
+  .alerta-ok, .alerta-error { padding:10px 14px; border-radius:6px; font-size:14px; margin-bottom:16px; }
+  .alerta-ok    { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
+  .alerta-error { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; }
+  .alerta-oculta { display:none; }
+  textarea { resize:vertical; }
+</style>

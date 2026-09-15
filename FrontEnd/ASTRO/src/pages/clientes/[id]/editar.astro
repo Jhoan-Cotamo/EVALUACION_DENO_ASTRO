@@ -1,0 +1,99 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../../lib/api';
+
+const { id } = Astro.params;
+const cookie = Astro.request.headers.get('cookie');
+const res = await apiFetch(`/api/clientes/${id}`, cookie);
+if (!res.ok) return Astro.redirect('/clientes');
+const cliente = await res.json();
+---
+
+<DashboardLayout titulo="Editar cliente">
+
+  <div class="card" style="max-width:520px;">
+    <h2 class="form-titulo">Editar cliente</h2>
+
+    <div id="alerta" class="alerta-oculta"></div>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <div class="campo">
+          <label for="nombre_completo">Nombre completo *</label>
+          <input id="nombre_completo" name="nombre_completo" type="text" value={cliente.nombre_completo} required />
+        </div>
+        <div class="campo">
+          <label for="documento">Documento *</label>
+          <input id="documento" name="documento" type="text" value={cliente.documento} required />
+        </div>
+        <div class="campo">
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" name="telefono" type="text" value={cliente.telefono ?? ''} />
+        </div>
+        <div class="campo">
+          <label for="correo">Correo electrónico *</label>
+          <input id="correo" name="correo" type="email" value={cliente.correo} required />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <a href="/clientes" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btn-submit">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+
+</DashboardLayout>
+
+<script define:vars={{ id }}>
+  const form = document.getElementById('form');
+  const alerta = document.getElementById('alerta');
+  const btn = document.getElementById('btn-submit');
+
+  function mostrar(msg, ok) {
+    alerta.textContent = msg;
+    alerta.className = ok ? 'alerta-ok' : 'alerta-error';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    const datos = {
+      nombre_completo: form.nombre_completo.value.trim(),
+      documento:       form.documento.value.trim(),
+      telefono:        form.telefono.value.trim() || null,
+      correo:          form.correo.value.trim(),
+    };
+
+    const res = await fetch(`/api/proxy/clientes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      mostrar('Cliente actualizado. Redirigiendo…', true);
+      setTimeout(() => window.location.href = '/clientes', 1200);
+    } else {
+      mostrar(data.error ?? 'Error al actualizar.', false);
+      btn.disabled = false;
+      btn.textContent = 'Guardar cambios';
+    }
+  });
+</script>
+
+<style>
+  .form-titulo { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+  .campos { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+  .form-footer { display: flex; gap: 10px; justify-content: flex-end; }
+  .alerta-ok, .alerta-error {
+    padding: 10px 14px; border-radius: 6px; font-size: 14px; margin-bottom: 16px;
+  }
+  .alerta-ok    { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
+  .alerta-error { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; }
+  .alerta-oculta { display: none; }
+</style>

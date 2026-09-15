@@ -1,0 +1,100 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout titulo="Nuevo técnico">
+
+  <div class="card" style="max-width:520px;">
+    <h2 class="form-titulo">Registrar técnico</h2>
+    <div id="alerta" class="alerta-oculta"></div>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <div class="campo">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" name="nombre" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="documento">Documento *</label>
+          <input id="documento" name="documento" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="especialidad">Especialidad</label>
+          <input id="especialidad" name="especialidad" type="text" placeholder="Ej: Hardware, Software…" />
+        </div>
+        <div class="campo">
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" name="telefono" type="text" />
+        </div>
+        <div class="campo">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <a href="/tecnicos" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btn-submit">Guardar técnico</button>
+      </div>
+    </form>
+  </div>
+
+</DashboardLayout>
+
+<script>
+  const form   = document.getElementById('form') as HTMLFormElement;
+  const alerta = document.getElementById('alerta')!;
+  const btn    = document.getElementById('btn-submit') as HTMLButtonElement;
+
+  function mostrar(msg: string, ok: boolean) {
+    alerta.textContent = msg;
+    alerta.className = ok ? 'alerta-ok' : 'alerta-error';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true; btn.textContent = 'Guardando…';
+
+    const datos = {
+      nombre:       (form.nombre as HTMLInputElement).value.trim(),
+      documento:    (form.documento as HTMLInputElement).value.trim(),
+      especialidad: (form.especialidad as HTMLInputElement).value.trim() || undefined,
+      telefono:     (form.telefono as HTMLInputElement).value.trim() || undefined,
+      estado:       (form.estado as HTMLSelectElement).value,
+    };
+
+    if (!datos.nombre || !datos.documento) {
+      mostrar('Nombre y documento son obligatorios.', false);
+      btn.disabled = false; btn.textContent = 'Guardar técnico';
+      return;
+    }
+
+    const res  = await fetch('/api/proxy/tecnicos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      mostrar('Técnico registrado exitosamente. Redirigiendo…', true);
+      setTimeout(() => window.location.href = '/tecnicos', 1200);
+    } else {
+      mostrar(data.error ?? 'Error al registrar.', false);
+      btn.disabled = false; btn.textContent = 'Guardar técnico';
+    }
+  });
+</script>
+
+<style>
+  .form-titulo { font-size:16px; font-weight:600; color:#1e293b; margin-bottom:20px; }
+  .campos { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+  .form-footer { display:flex; gap:10px; justify-content:flex-end; }
+  .alerta-ok, .alerta-error { padding:10px 14px; border-radius:6px; font-size:14px; margin-bottom:16px; }
+  .alerta-ok    { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
+  .alerta-error { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; }
+  .alerta-oculta { display:none; }
+</style>

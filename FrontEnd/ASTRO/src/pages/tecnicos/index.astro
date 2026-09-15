@@ -1,0 +1,59 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const res = await apiFetch('/api/tecnicos', cookie);
+const tecnicos = res.ok ? await res.json() : [];
+---
+
+<DashboardLayout titulo="Técnicos">
+
+  <div class="toolbar">
+    <a href="/tecnicos/nuevo" class="btn btn-primary">+ Nuevo técnico</a>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    {tecnicos.length === 0
+      ? <p style="color:#94a3b8;font-size:14px;">No hay técnicos registrados.</p>
+      : <table class="tabla">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Documento</th>
+              <th>Especialidad</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tecnicos.map((t: any) => (
+              <tr>
+                <td>{t.id_tecnico}</td>
+                <td>{t.nombre}</td>
+                <td>{t.documento}</td>
+                <td>{t.especialidad ?? '—'}</td>
+                <td>{t.telefono ?? '—'}</td>
+                <td>
+                  <span class={`badge ${t.estado === 'Activo' ? 'badge-verde' : 'badge-rojo'}`}>
+                    {t.estado}
+                  </span>
+                </td>
+                <td class="acciones">
+                  <a href={`/tecnicos/${t.id_tecnico}/editar`} class="btn btn-ghost" style="font-size:12px;padding:4px 10px;">Editar</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+    }
+  </div>
+
+</DashboardLayout>
+
+<style>
+  .toolbar  { display: flex; justify-content: flex-end; }
+  .acciones { display: flex; gap: 6px; }
+</style>

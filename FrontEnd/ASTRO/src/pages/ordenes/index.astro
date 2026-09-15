@@ -1,0 +1,63 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const res = await apiFetch('/api/ordenes', cookie);
+const ordenes = res.ok ? await res.json() : [];
+
+const estadoColores: Record<string, string> = {
+  'RECIBIDO':       'badge-azul',
+  'EN DIAGNOSTICO': 'badge-amarillo',
+  'COTIZADO':       'badge-naranja',
+  'EN REPARACION':  'badge-naranja',
+  'TERMINADO':      'badge-verde',
+  'ENTREGADO':      'badge-verde',
+  'CANCELADO':      'badge-rojo',
+};
+---
+
+<DashboardLayout titulo="Órdenes de servicio">
+
+  <div class="toolbar">
+    <a href="/ordenes/nueva" class="btn btn-primary">+ Nueva orden</a>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    {ordenes.length === 0
+      ? <p style="color:#94a3b8;font-size:14px;">No hay órdenes registradas.</p>
+      : <table class="tabla">
+          <thead>
+            <tr>
+              <th>N° Orden</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Valor estimado</th>
+              <th>Valor final</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordenes.map((o: any) => (
+              <tr>
+                <td><strong>{o.numero_orden}</strong></td>
+                <td>{new Date(o.fecha_recepcion).toLocaleDateString('es-CO')}</td>
+                <td><span class={`badge ${estadoColores[o.estado] ?? 'badge-gris'}`}>{o.estado}</span></td>
+                <td>{o.valor_estimado != null ? `$${Number(o.valor_estimado).toLocaleString('es-CO')}` : '—'}</td>
+                <td>{o.valor_final != null && o.valor_final > 0 ? `$${Number(o.valor_final).toLocaleString('es-CO')}` : '—'}</td>
+                <td class="acciones">
+                  <a href={`/ordenes/${o.id_orden}`} class="btn btn-ghost" style="font-size:12px;padding:4px 10px;">Ver</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+    }
+  </div>
+
+</DashboardLayout>
+
+<style>
+  .toolbar  { display: flex; justify-content: flex-end; }
+  .acciones { display: flex; gap: 6px; }
+</style>

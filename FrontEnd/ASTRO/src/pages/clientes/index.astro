@@ -1,0 +1,121 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const res = await apiFetch('/api/clientes', cookie);
+const clientes = res.ok ? await res.json() : [];
+---
+
+<DashboardLayout titulo="Clientes">
+
+  <div class="toolbar">
+    <a href="/clientes/nuevo" class="btn btn-primary">+ Nuevo cliente</a>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    {clientes.length === 0
+      ? <p style="color:#94a3b8;font-size:14px;">No hay clientes registrados.</p>
+      : <table class="tabla">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Documento</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clientes.map((c: any) => (
+              <tr>
+                <td>{c.id_cliente}</td>
+                <td>{c.nombre_completo}</td>
+                <td>{c.documento}</td>
+                <td>{c.telefono ?? '—'}</td>
+                <td>{c.correo}</td>
+                <td class="acciones">
+                  <a href={`/clientes/${c.id_cliente}/editar`} class="btn btn-ghost" style="font-size:12px;padding:4px 10px;">Editar</a>
+                  <button
+                    class="btn btn-danger"
+                    style="font-size:12px;padding:4px 10px;"
+                    data-id={c.id_cliente}
+                    data-nombre={c.nombre_completo}
+                    onclick="eliminarCliente(this)"
+                  >Eliminar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+    }
+  </div>
+
+  <div id="modal" class="modal-overlay oculto">
+    <div class="modal-box">
+      <p id="modal-msg">¿Eliminar este cliente?</p>
+      <div class="modal-btns">
+        <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn btn-danger" id="modal-confirm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</DashboardLayout>
+
+<script>
+  let idPendiente: number | null = null;
+
+  function eliminarCliente(btn: HTMLButtonElement) {
+    idPendiente = Number(btn.dataset.id);
+    const nombre = btn.dataset.nombre;
+    (document.getElementById('modal-msg') as HTMLElement).textContent =
+      `¿Eliminar al cliente "${nombre}"? Esta acción no se puede deshacer.`;
+    document.getElementById('modal')!.classList.remove('oculto');
+  }
+
+  function cerrarModal() {
+    idPendiente = null;
+    document.getElementById('modal')!.classList.add('oculto');
+  }
+
+  document.getElementById('modal-confirm')!.addEventListener('click', async () => {
+    if (!idPendiente) return;
+    const res = await fetch(`/api/proxy/clientes/${idPendiente}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      alert(data.error ?? 'Error al eliminar');
+      cerrarModal();
+    }
+  });
+
+  // exponer globalmente para el onclick inline
+  (window as any).eliminarCliente = eliminarCliente;
+  (window as any).cerrarModal = cerrarModal;
+</script>
+
+<style>
+  .toolbar { display: flex; justify-content: flex-end; }
+  .acciones { display: flex; gap: 6px; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.oculto { display: none; }
+  .modal-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 28px 32px;
+    max-width: 380px;
+    width: 90%;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .modal-box p { font-size: 15px; color: #1e293b; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+</style>

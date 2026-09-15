@@ -1,0 +1,197 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const { id } = Astro.params;
+const cookie = Astro.request.headers.get('cookie');
+
+const [resOrden, resHistorial] = await Promise.all([
+  apiFetch(`/api/ordenes/${id}`, cookie),
+  apiFetch(`/api/ordenes/${id}/historial`, cookie),
+]);
+
+if (!resOrden.ok) return Astro.redirect('/ordenes');
+
+const orden    = await resOrden.json();
+const historial = resHistorial.ok ? await resHistorial.json() : [];
+
+const TRANSICIONES: Record<string, string[]> = {
+  'RECIBIDO':       ['EN DIAGNOSTICO', 'CANCELADO'],
+  'EN DIAGNOSTICO': ['COTIZADO', 'CANCELADO'],
+  'COTIZADO':       ['EN REPARACION', 'CANCELADO'],
+  'EN REPARACION':  ['TERMINADO'],
+  'TERMINADO':      ['ENTREGADO'],
+  'ENTREGADO':      [],
+  'CANCELADO':      [],
+};
+
+const siguientesEstados = TRANSICIONES[orden.estado] ?? [];
+
+const estadoColores: Record<string, string> = {
+  'RECIBIDO':       'badge-azul',
+  'EN DIAGNOSTICO': 'badge-amarillo',
+  'COTIZADO':       'badge-naranja',
+  'EN REPARACION':  'badge-naranja',
+  'TERMINADO':      'badge-verde',
+  'ENTREGADO':      'badge-verde',
+  'CANCELADO':      'badge-rojo',
+};
+---
+
+<DashboardLayout titulo={`Orden ${orden.numero_orden}`}>
+
+  <div class="layout">
+
+    <!-- INFO ORDEN -->
+    <div class="card">
+      <div class="orden-head">
+        <div>
+          <h2 class="orden-num">{orden.numero_orden}</h2>
+          <span class={`badge ${estadoColores[orden.estado] ?? 'badge-gris'}`}>{orden.estado}</span>
+        </div>
+        <a href="/ordenes" class="btn btn-ghost">← Volver</a>
+      </div>
+
+      <dl class="detalles">
+        <div class="det-fila"><dt>Fecha recepción</dt><dd>{new Date(orden.fecha_recepcion).toLocaleString('es-CO')}</dd></div>
+        <div class="det-fila"><dt>Cliente ID</dt><dd>{orden.id_cliente}</dd></div>
+        <div class="det-fila"><dt>Equipo ID</dt><dd>{orden.id_equipo}</dd></div>
+        <div class="det-fila"><dt>Técnico ID</dt><dd>{orden.id_tecnico}</dd></div>
+        <div class="det-fila"><dt>Descripción</dt><dd>{orden.descripcion_problema ?? '—'}</dd></div>
+        <div class="det-fila"><dt>Observaciones</dt><dd>{orden.observaciones ?? '—'}</dd></div>
+        <div class="det-fila"><dt>Valor estimado</dt><dd>{orden.valor_estimado != null ? `$${Number(orden.valor_estimado).toLocaleString('es-CO')}` : '—'}</dd></div>
+        <div class="det-fila"><dt>Valor final</dt><dd>{orden.valor_final != null && orden.valor_final > 0 ? `$${Number(orden.valor_final).toLocaleString('es-CO')}` : '—'}</dd></div>
+      </dl>
+
+      <!-- CAMBIO DE ESTADO -->
+      {siguientesEstados.length > 0 && (
+        <div class="cambio-estado">
+          <h3>Cambiar estado</h3>
+          <div id="alerta-estado" class="alerta-oculta"></div>
+          <div class="estado-btns">
+            {siguientesEstados.map(s => (
+              <button
+                class={`btn ${s === 'CANCELADO' ? 'btn-danger' : 'btn-primary'}`}
+                data-estado={s}
+                onclick="cambiarEstado(this)"
+              >{s}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- EDITAR VALORES -->
+      <div class="editar-valores">
+        <h3>Actualizar valores</h3>
+        <div id="alerta-vals" class="alerta-oculta"></div>
+        <form id="form-vals" class="vals-form">
+          <div class="campo">
+            <label for="valor_estimado">Valor estimado ($)</label>
+            <input id="valor_estimado" type="number" min="0" step="1000" value={orden.valor_estimado ?? 0} />
+          </div>
+          <div class="campo">
+            <label for="valor_final">Valor final ($)</label>
+            <input id="valor_final" type="number" min="0" step="1000" value={orden.valor_final ?? 0} />
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar valores</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="card historial-card">
+      <h3 class="hist-titulo">Historial de estados</h3>
+      {historial.length === 0
+        ? <p class="vacio">Sin historial.</p>
+        : <ol class="hist-list">
+            {historial.map((h: any) => (
+              <li class="hist-item">
+                <span class={`badge ${estadoColores[h.estado] ?? 'badge-gris'}`}>{h.estado}</span>
+                <span class="hist-fecha">{new Date(h.fecha_cambio).toLocaleString('es-CO')}</span>
+              </li>
+            ))}
+          </ol>
+      }
+    </div>
+
+  </div>
+
+</DashboardLayout>
+
+<script define:vars={{ id }}>
+  function mostrar(elId, msg, ok) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.className = ok ? 'alerta-ok' : 'alerta-error';
+  }
+
+  async function cambiarEstado(btn) {
+    const estado = btn.dataset.estado;
+    btn.disabled = true;
+    const res  = await fetch(`/api/proxy/ordenes/${id}/estado`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      mostrar('alerta-estado', `Estado actualizado a ${estado}. Recargando…`, true);
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      mostrar('alerta-estado', data.error ?? 'Error al cambiar estado.', false);
+      btn.disabled = false;
+    }
+  }
+
+  window.cambiarEstado = cambiarEstado;
+
+  document.getElementById('form-vals')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ve = Number(document.getElementById('valor_estimado').value);
+    const vf = Number(document.getElementById('valor_final').value);
+    if (ve < 0 || vf < 0) {
+      mostrar('alerta-vals', 'Los valores no pueden ser negativos.', false);
+      return;
+    }
+    const res  = await fetch(`/api/proxy/ordenes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor_estimado: ve, valor_final: vf }),
+    });
+    const data = await res.json();
+    mostrar('alerta-vals', res.ok ? 'Valores guardados correctamente.' : (data.error ?? 'Error.'), res.ok);
+  });
+</script>
+
+<style>
+  .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+  .orden-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .orden-num  { font-size:20px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+
+  .detalles { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+  .det-fila { display:grid; grid-template-columns:140px 1fr; gap:8px; font-size:14px; }
+  dt { color:#64748b; font-weight:500; }
+  dd { color:#1e293b; }
+
+  .cambio-estado { border-top:1px solid #f1f5f9; padding-top:18px; margin-bottom:20px; }
+  .cambio-estado h3, .editar-valores h3, .hist-titulo {
+    font-size:14px; font-weight:600; color:#1e293b; margin-bottom:12px;
+  }
+  .estado-btns { display:flex; gap:10px; flex-wrap:wrap; }
+
+  .editar-valores { border-top:1px solid #f1f5f9; padding-top:18px; }
+  .vals-form { display:flex; flex-direction:column; gap:12px; }
+
+  .historial-card { }
+  .hist-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .hist-item { display:flex; flex-direction:column; gap:4px; }
+  .hist-fecha { font-size:12px; color:#94a3b8; }
+  .vacio { font-size:14px; color:#94a3b8; }
+
+  .alerta-ok, .alerta-error { padding:10px 14px; border-radius:6px; font-size:14px; margin-bottom:12px; }
+  .alerta-ok    { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
+  .alerta-error { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; }
+  .alerta-oculta { display:none; }
+
+  @media (max-width:768px) { .layout { grid-template-columns:1fr; } }
+</style>

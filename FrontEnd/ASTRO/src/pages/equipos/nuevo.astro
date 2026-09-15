@@ -1,0 +1,116 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const res = await apiFetch('/api/clientes', cookie);
+const clientes = res.ok ? await res.json() : [];
+---
+
+<DashboardLayout titulo="Nuevo equipo">
+
+  <div class="card" style="max-width:540px;">
+    <h2 class="form-titulo">Registrar equipo</h2>
+    <div id="alerta" class="alerta-oculta"></div>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <div class="campo">
+          <label for="id_cliente">Cliente *</label>
+          <select id="id_cliente" name="id_cliente" required>
+            <option value="">— Seleccionar cliente —</option>
+            {clientes.map((c: any) => (
+              <option value={c.id_cliente}>{c.nombre_completo} ({c.documento})</option>
+            ))}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="tipo_equipo">Tipo de equipo *</label>
+          <input id="tipo_equipo" name="tipo_equipo" type="text" placeholder="Ej: Computador portátil" required />
+        </div>
+        <div class="fila">
+          <div class="campo">
+            <label for="marca">Marca</label>
+            <input id="marca" name="marca" type="text" />
+          </div>
+          <div class="campo">
+            <label for="modelo">Modelo</label>
+            <input id="modelo" name="modelo" type="text" />
+          </div>
+        </div>
+        <div class="campo">
+          <label for="numero_serie">Número de serie</label>
+          <input id="numero_serie" name="numero_serie" type="text" />
+        </div>
+        <div class="campo">
+          <label for="descripcion_problema">Descripción del problema</label>
+          <textarea id="descripcion_problema" name="descripcion_problema" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <a href="/equipos" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btn-submit">Guardar equipo</button>
+      </div>
+    </form>
+  </div>
+
+</DashboardLayout>
+
+<script>
+  const form   = document.getElementById('form') as HTMLFormElement;
+  const alerta = document.getElementById('alerta')!;
+  const btn    = document.getElementById('btn-submit') as HTMLButtonElement;
+
+  function mostrar(msg: string, ok: boolean) {
+    alerta.textContent = msg;
+    alerta.className = ok ? 'alerta-ok' : 'alerta-error';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true; btn.textContent = 'Guardando…';
+
+    const datos: Record<string, unknown> = {
+      id_cliente:           Number((form.id_cliente as HTMLSelectElement).value),
+      tipo_equipo:          (form.tipo_equipo as HTMLInputElement).value.trim(),
+      marca:                (form.marca as HTMLInputElement).value.trim() || undefined,
+      modelo:               (form.modelo as HTMLInputElement).value.trim() || undefined,
+      numero_serie:         (form.numero_serie as HTMLInputElement).value.trim() || undefined,
+      descripcion_problema: (form.descripcion_problema as HTMLTextAreaElement).value.trim() || undefined,
+    };
+
+    if (!datos.id_cliente || !datos.tipo_equipo) {
+      mostrar('Cliente y tipo de equipo son obligatorios.', false);
+      btn.disabled = false; btn.textContent = 'Guardar equipo';
+      return;
+    }
+
+    const res  = await fetch('/api/proxy/equipos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      mostrar('Equipo registrado exitosamente. Redirigiendo…', true);
+      setTimeout(() => window.location.href = '/equipos', 1200);
+    } else {
+      mostrar(data.error ?? 'Error al registrar equipo.', false);
+      btn.disabled = false; btn.textContent = 'Guardar equipo';
+    }
+  });
+</script>
+
+<style>
+  .form-titulo { font-size:16px; font-weight:600; color:#1e293b; margin-bottom:20px; }
+  .campos { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+  .fila   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-footer { display:flex; gap:10px; justify-content:flex-end; }
+  .alerta-ok, .alerta-error { padding:10px 14px; border-radius:6px; font-size:14px; margin-bottom:16px; }
+  .alerta-ok    { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
+  .alerta-error { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; }
+  .alerta-oculta { display:none; }
+  textarea { resize: vertical; }
+</style>

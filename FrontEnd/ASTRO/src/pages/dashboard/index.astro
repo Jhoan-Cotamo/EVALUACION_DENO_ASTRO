@@ -1,0 +1,183 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+
+// Obtener conteos en paralelo
+const [resClientes, resEquipos, resTecnicos, resOrdenes] = await Promise.all([
+  apiFetch('/api/clientes', cookie),
+  apiFetch('/api/equipos', cookie),
+  apiFetch('/api/tecnicos', cookie),
+  apiFetch('/api/ordenes', cookie),
+]);
+
+const clientes  = resClientes.ok  ? await resClientes.json()  : [];
+const equipos   = resEquipos.ok   ? await resEquipos.json()   : [];
+const tecnicos  = resTecnicos.ok  ? await resTecnicos.json()  : [];
+const ordenes   = resOrdenes.ok   ? await resOrdenes.json()   : [];
+
+// Agrupar órdenes por estado
+const porEstado: Record<string, number> = {};
+for (const o of ordenes) {
+  porEstado[o.estado] = (porEstado[o.estado] ?? 0) + 1;
+}
+
+const estadoColores: Record<string, string> = {
+  'RECIBIDO':       'badge-azul',
+  'EN DIAGNOSTICO': 'badge-amarillo',
+  'COTIZADO':       'badge-naranja',
+  'EN REPARACION':  'badge-naranja',
+  'TERMINADO':      'badge-verde',
+  'ENTREGADO':      'badge-verde',
+  'CANCELADO':      'badge-rojo',
+};
+
+// Últimas 5 órdenes
+const ultimasOrdenes = [...ordenes].reverse().slice(0, 5);
+---
+
+<DashboardLayout titulo="Dashboard">
+
+  <!-- TARJETAS RESUMEN -->
+  <div class="grid-cards">
+    <div class="stat-card">
+      <div class="stat-icono azul">👤</div>
+      <div class="stat-info">
+        <span class="stat-num">{clientes.length}</span>
+        <span class="stat-label">Clientes</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icono verde">🖥</div>
+      <div class="stat-info">
+        <span class="stat-num">{equipos.length}</span>
+        <span class="stat-label">Equipos</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icono naranja">🔧</div>
+      <div class="stat-info">
+        <span class="stat-num">{tecnicos.filter((t: any) => t.estado === 'Activo').length}</span>
+        <span class="stat-label">Técnicos activos</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icono morado">📋</div>
+      <div class="stat-info">
+        <span class="stat-num">{ordenes.length}</span>
+        <span class="stat-label">Órdenes totales</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDENES POR ESTADO + ÚLTIMAS ÓRDENES -->
+  <div class="grid-bottom">
+
+    <div class="card">
+      <h2 class="card-titulo">Órdenes por estado</h2>
+      <div class="estados-list">
+        {Object.entries(porEstado).length === 0
+          ? <p class="vacio">Sin órdenes registradas.</p>
+          : Object.entries(porEstado).map(([estado, count]) => (
+            <div class="estado-row">
+              <span class={`badge ${estadoColores[estado] ?? 'badge-gris'}`}>{estado}</span>
+              <span class="estado-count">{count}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-titulo">Últimas órdenes</h2>
+        <a href="/ordenes" class="btn btn-ghost" style="font-size:13px;padding:5px 12px;">Ver todas</a>
+      </div>
+      {ultimasOrdenes.length === 0
+        ? <p class="vacio">Aún no hay órdenes.</p>
+        : <table class="tabla">
+            <thead>
+              <tr>
+                <th>N° Orden</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ultimasOrdenes.map((o: any) => (
+                <tr>
+                  <td><a href={`/ordenes/${o.id_orden}`} class="link-orden">{o.numero_orden}</a></td>
+                  <td><span class={`badge ${estadoColores[o.estado] ?? 'badge-gris'}`}>{o.estado}</span></td>
+                  <td>{new Date(o.fecha_recepcion).toLocaleDateString('es-CO')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+      }
+    </div>
+
+  </div>
+
+</DashboardLayout>
+
+<style>
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .stat-icono {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .azul    { background: #dbeafe; }
+  .verde   { background: #dcfce7; }
+  .naranja { background: #ffedd5; }
+  .morado  { background: #ede9fe; }
+
+  .stat-info { display: flex; flex-direction: column; gap: 2px; }
+  .stat-num  { font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1; }
+  .stat-label{ font-size: 13px; color: #64748b; }
+
+  .grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+  }
+
+  .card-titulo { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 14px; }
+  .card-head   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-head .card-titulo { margin-bottom: 0; }
+
+  .estados-list { display: flex; flex-direction: column; gap: 10px; }
+  .estado-row   { display: flex; align-items: center; justify-content: space-between; }
+  .estado-count { font-size: 18px; font-weight: 700; color: #1e293b; }
+
+  .vacio { font-size: 14px; color: #94a3b8; }
+  .link-orden { color: #2563eb; text-decoration: none; font-weight: 500; }
+  .link-orden:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    .grid-bottom { grid-template-columns: 1fr; }
+  }
+</style>

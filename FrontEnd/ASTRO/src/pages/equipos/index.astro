@@ -1,0 +1,61 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { apiFetch } from '../../lib/api';
+
+const cookie = Astro.request.headers.get('cookie');
+const [resEquipos, resClientes] = await Promise.all([
+  apiFetch('/api/equipos', cookie),
+  apiFetch('/api/clientes', cookie),
+]);
+const equipos  = resEquipos.ok  ? await resEquipos.json()  : [];
+const clientes = resClientes.ok ? await resClientes.json() : [];
+const mapaClientes: Record<number, string> = {};
+for (const c of clientes) mapaClientes[c.id_cliente] = c.nombre_completo;
+---
+
+<DashboardLayout titulo="Equipos">
+
+  <div class="toolbar">
+    <a href="/equipos/nuevo" class="btn btn-primary">+ Nuevo equipo</a>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    {equipos.length === 0
+      ? <p style="color:#94a3b8;font-size:14px;">No hay equipos registrados.</p>
+      : <table class="tabla">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Marca / Modelo</th>
+              <th>N° Serie</th>
+              <th>Problema</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {equipos.map((e: any) => (
+              <tr>
+                <td>{e.id_equipo}</td>
+                <td>{mapaClientes[e.id_cliente] ?? e.id_cliente}</td>
+                <td>{e.tipo_equipo}</td>
+                <td>{[e.marca, e.modelo].filter(Boolean).join(' / ') || '—'}</td>
+                <td>{e.numero_serie ?? '—'}</td>
+                <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{e.descripcion_problema ?? '—'}</td>
+                <td class="acciones">
+                  <a href={`/equipos/${e.id_equipo}/editar`} class="btn btn-ghost" style="font-size:12px;padding:4px 10px;">Editar</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+    }
+  </div>
+
+</DashboardLayout>
+
+<style>
+  .toolbar  { display: flex; justify-content: flex-end; }
+  .acciones { display: flex; gap: 6px; }
+</style>
