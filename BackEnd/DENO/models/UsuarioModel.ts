@@ -28,6 +28,11 @@ export class UsuarioModel {
     return resultado.length ? (resultado[0] as Usuario) : null;
   }
 
+  async buscarPorCorreo(correo: string): Promise<Usuario | null> {
+    const resultado = await conexion.query("SELECT * FROM usuarios WHERE correo = ?", [correo]);
+    return resultado.length ? (resultado[0] as Usuario) : null;
+  }
+
   async actualizar(id: number, datos: Partial<Usuario>): Promise<boolean> {
     const resultado = await conexion.execute(
       "UPDATE usuarios SET nombre=?, correo=?, contraseña=?, rol=?, estado=? WHERE id_usuario=?",
