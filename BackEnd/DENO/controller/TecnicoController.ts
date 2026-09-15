@@ -14,7 +14,7 @@ export async function obtenerTecnicos(ctx: Context) {
   }
 }
 
-export async function obtenerTecnicoPorId(ctx: RouterContext<"/tecnicos/:id">) {
+export async function obtenerTecnicoPorId(ctx: RouterContext<"/api/tecnicos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -71,7 +71,7 @@ export async function crearTecnico(ctx: Context) {
   }
 }
 
-export async function actualizarTecnico(ctx: RouterContext<"/tecnicos/:id">) {
+export async function actualizarTecnico(ctx: RouterContext<"/api/tecnicos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -111,7 +111,7 @@ export async function actualizarTecnico(ctx: RouterContext<"/tecnicos/:id">) {
   }
 }
 
-export async function eliminarTecnico(ctx: RouterContext<"/tecnicos/:id">) {
+export async function eliminarTecnico(ctx: RouterContext<"/api/tecnicos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

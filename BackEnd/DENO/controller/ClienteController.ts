@@ -14,7 +14,7 @@ export async function obtenerClientes(ctx: Context) {
   }
 }
 
-export async function obtenerClientePorId(ctx: RouterContext<"/clientes/:id">) {
+export async function obtenerClientePorId(ctx: RouterContext<"/api/clientes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -72,7 +72,7 @@ export async function crearCliente(ctx: Context) {
   }
 }
 
-export async function actualizarCliente(ctx: RouterContext<"/clientes/:id">) {
+export async function actualizarCliente(ctx: RouterContext<"/api/clientes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

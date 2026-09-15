@@ -40,7 +40,7 @@ export async function obtenerOrdenes(ctx: Context) {
   }
 }
 
-export async function obtenerOrdenPorId(ctx: RouterContext<"/ordenes/:id">) {
+export async function obtenerOrdenPorId(ctx: RouterContext<"/api/ordenes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -141,7 +141,7 @@ export async function crearOrden(ctx: Context) {
   }
 }
 
-export async function actualizarOrden(ctx: RouterContext<"/ordenes/:id">) {
+export async function actualizarOrden(ctx: RouterContext<"/api/ordenes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -199,7 +199,7 @@ export async function actualizarOrden(ctx: RouterContext<"/ordenes/:id">) {
   }
 }
 
-export async function cambiarEstadoOrden(ctx: RouterContext<"/ordenes/:id/estado">) {
+export async function cambiarEstadoOrden(ctx: RouterContext<"/api/ordenes/:id/estado">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -252,7 +252,7 @@ export async function cambiarEstadoOrden(ctx: RouterContext<"/ordenes/:id/estado
   }
 }
 
-export async function obtenerHistorialOrden(ctx: RouterContext<"/ordenes/:id/historial">) {
+export async function obtenerHistorialOrden(ctx: RouterContext<"/api/ordenes/:id/historial">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -277,7 +277,7 @@ export async function obtenerHistorialOrden(ctx: RouterContext<"/ordenes/:id/his
   }
 }
 
-export async function eliminarOrden(ctx: RouterContext<"/ordenes/:id">) {
+export async function eliminarOrden(ctx: RouterContext<"/api/ordenes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

@@ -16,7 +16,7 @@ export async function obtenerEquipos(ctx: Context) {
   }
 }
 
-export async function obtenerEquipoPorId(ctx: RouterContext<"/equipos/:id">) {
+export async function obtenerEquipoPorId(ctx: RouterContext<"/api/equipos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -39,7 +39,7 @@ export async function obtenerEquipoPorId(ctx: RouterContext<"/equipos/:id">) {
   }
 }
 
-export async function obtenerEquiposPorCliente(ctx: RouterContext<"/clientes/:id/equipos">) {
+export async function obtenerEquiposPorCliente(ctx: RouterContext<"/api/clientes/:id/equipos">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -106,7 +106,7 @@ export async function crearEquipo(ctx: Context) {
   }
 }
 
-export async function actualizarEquipo(ctx: RouterContext<"/equipos/:id">) {
+export async function actualizarEquipo(ctx: RouterContext<"/api/equipos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -149,7 +149,7 @@ export async function actualizarEquipo(ctx: RouterContext<"/equipos/:id">) {
   }
 }
 
-export async function eliminarEquipo(ctx: RouterContext<"/equipos/:id">) {
+export async function eliminarEquipo(ctx: RouterContext<"/api/equipos/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

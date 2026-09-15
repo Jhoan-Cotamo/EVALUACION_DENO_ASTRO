@@ -17,7 +17,7 @@ export async function obtenerUsuarios(ctx: Context) {
   }
 }
 
-export async function obtenerUsuarioPorId(ctx: RouterContext<"/usuarios/:id">) {
+export async function obtenerUsuarioPorId(ctx: RouterContext<"/api/usuarios/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -84,7 +84,7 @@ export async function crearUsuario(ctx: Context) {
   }
 }
 
-export async function actualizarUsuario(ctx: RouterContext<"/usuarios/:id">) {
+export async function actualizarUsuario(ctx: RouterContext<"/api/usuarios/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;
@@ -128,7 +128,7 @@ export async function actualizarUsuario(ctx: RouterContext<"/usuarios/:id">) {
   }
 }
 
-export async function eliminarUsuario(ctx: RouterContext<"/usuarios/:id">) {
+export async function eliminarUsuario(ctx: RouterContext<"/api/usuarios/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

@@ -1,0 +1,435 @@
+---
+import { getUsuario } from '../lib/auth';
+
+const cookie = Astro.request.headers.get('cookie');
+const usuario = await getUsuario(cookie);
+
+// Protege todas las páginas que usen este layout
+if (!usuario) {
+  return Astro.redirect('/login');
+}
+
+interface Props {
+  titulo: string;
+}
+const { titulo } = Astro.props;
+
+const navLinks = [
+  { href: '/dashboard',       label: 'Dashboard',  icono: '▦' },
+  { href: '/clientes',        label: 'Clientes',   icono: '👤' },
+  { href: '/equipos',         label: 'Equipos',    icono: '🖥' },
+  { href: '/tecnicos',        label: 'Técnicos',   icono: '🔧' },
+  { href: '/ordenes',         label: 'Órdenes',    icono: '📋' },
+];
+
+const rutaActual = new URL(Astro.request.url).pathname;
+---
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>{titulo} — ServiTécnico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+
+  <div class="shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">⚙</span>
+        <span class="brand-name">ServiTécnico</span>
+      </div>
+
+      <nav class="nav">
+        {navLinks.map(link => {
+          const activo = rutaActual === link.href ||
+                         (link.href !== '/dashboard' && rutaActual.startsWith(link.href));
+          return (
+            
+              href={link.href}
+              class={`nav-link ${activo ? 'activo' : ''}`}
+            >
+              <span class="nav-icono">{link.icono}</span>
+              <span>{link.label}</span>
+            </a>
+          );
+        })}
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="usuario-info">
+          <span class="usuario-nombre">{usuario.nombre}</span>
+          <span class="usuario-rol">{usuario.rol}</span>
+        </div>
+        <form method="POST" action="/api/logout" id="form-logout">
+          <button type="submit" class="btn-logout">Salir</button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="main">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <h1 class="page-title">{titulo}</h1>
+        <div class="topbar-right">
+          <span class="topbar-usuario">
+            {usuario.nombre}
+            <span class="badge-rol">{usuario.rol}</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- CONTENIDO -->
+      <main class="contenido">
+        <slot />
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Logout via fetch para no perder la SPA -->
+  <script>
+    const formLogout = document.getElementById('form-logout');
+    formLogout?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/login';
+    });
+  </script>
+
+</body>
+</html>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SHELL ── */
+  .shell {
+    display: flex;
+    height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #1e2a3a;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 18px;
+    border-bottom: 1px solid #2d3f53;
+  }
+
+  .brand-icon {
+    font-size: 22px;
+    color: #2563eb;
+  }
+
+  .brand-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e2e8f0;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    flex: 1;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 6px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .nav-link:hover {
+    background: #2d3f53;
+    color: #e2e8f0;
+  }
+
+  .nav-link.activo {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .nav-icono {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+  }
+
+  /* ── SIDEBAR FOOTER ── */
+  .sidebar-footer {
+    padding: 14px 12px;
+    border-top: 1px solid #2d3f53;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .usuario-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .usuario-nombre {
+    font-size: 13px;
+    font-weight: 500;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .usuario-rol {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .btn-logout {
+    width: 100%;
+    padding: 7px;
+    background: transparent;
+    border: 1px solid #2d3f53;
+    border-radius: 6px;
+    color: #94a3b8;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-logout:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .page-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-usuario {
+    font-size: 13px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge-rol {
+    font-size: 11px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  /* ── CONTENIDO ── */
+  .contenido {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+  }
+
+  /* ── UTILIDADES GLOBALES (disponibles en todas las páginas) ── */
+  :global(.card) {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+
+  :global(.btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  :global(.btn:hover) { opacity: 0.88; }
+
+  :global(.btn-primary) {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  :global(.btn-danger) {
+    background: #ef4444;
+    color: #ffffff;
+  }
+
+  :global(.btn-ghost) {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+  }
+
+  :global(.tabla) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  :global(.tabla th) {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  :global(.tabla td) {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+  }
+
+  :global(.tabla tr:last-child td) { border-bottom: none; }
+
+  :global(.tabla tr:hover td) { background: #f8fafc; }
+
+  :global(.badge) {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  :global(.badge-verde)  { background: #dcfce7; color: #15803d; }
+  :global(.badge-rojo)   { background: #fee2e2; color: #b91c1c; }
+  :global(.badge-azul)   { background: #dbeafe; color: #1d4ed8; }
+  :global(.badge-gris)   { background: #f1f5f9; color: #475569; }
+  :global(.badge-naranja){ background: #ffedd5; color: #c2410c; }
+  :global(.badge-amarillo){ background: #fef9c3; color: #a16207; }
+
+  :global(.campo) {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  :global(.campo label) {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  :global(.campo input),
+  :global(.campo select),
+  :global(.campo textarea) {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  :global(.campo input:focus),
+  :global(.campo select:focus),
+  :global(.campo textarea:focus) {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px #eff6ff;
+  }
+
+  :global(.mensaje-error) {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  :global(.mensaje-ok) {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #15803d;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+</style>
