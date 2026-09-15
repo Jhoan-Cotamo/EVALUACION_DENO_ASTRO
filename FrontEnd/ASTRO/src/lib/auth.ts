@@ -7,7 +7,7 @@ import { apiFetch } from './api';
 export async function getUsuario(cookie: string | null) {
   if (!cookie) return null;
   try {
-    const res = await apiFetch('/api/auth/perfil', cookie);
+    const res = await apiFetch('/api/perfil', cookie);
     if (!res.ok) return null;
     const data = await res.json();
     return data.usuario as {

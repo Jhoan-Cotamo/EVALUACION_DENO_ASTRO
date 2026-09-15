@@ -35,9 +35,9 @@ router.get("/api/perfil", verificarAutenticacion, perfil);
 
 // ── Clientes ──────────────────────────────────────────
 router.get("/api/clientes", verificarAutenticacion, obtenerClientes);
-router.get("/clientes/:id", verificarAutenticacion, obtenerClientePorId);
+router.get("/api/clientes/:id", verificarAutenticacion, obtenerClientePorId);
 router.post("/clientes", verificarAutenticacion, crearCliente);
-router.put("/clientes/:id", verificarAutenticacion, actualizarCliente);
+router.put("/api/clientes/:id", verificarAutenticacion, actualizarCliente);
 router.delete(
   "/clientes/:id",
   verificarAutenticacion,
@@ -47,12 +47,12 @@ router.delete(
 
 // ── Equipos ───────────────────────────────────────────
 router.get("/api/equipos", verificarAutenticacion, obtenerEquipos);
-router.get("/equipos/:id", verificarAutenticacion, obtenerEquipoPorId);
-router.get("/clientes/:id/equipos", verificarAutenticacion, obtenerEquiposPorCliente);
+router.get("/api/equipos/:id", verificarAutenticacion, obtenerEquipoPorId);
+router.get("/api/clientes/:id/equipos", verificarAutenticacion, obtenerEquiposPorCliente);
 router.post("/api/equipos", verificarAutenticacion, crearEquipo);
-router.put("/equipos/:id", verificarAutenticacion, actualizarEquipo);
+router.put("/api/equipos/:id", verificarAutenticacion, actualizarEquipo);
 router.delete(
-  "/equipos/:id",
+  "/api/equipos/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   eliminarEquipo,
@@ -60,7 +60,7 @@ router.delete(
 
 // ── Técnicos ──────────────────────────────────────────
 router.get("/api/tecnicos", verificarAutenticacion, obtenerTecnicos);
-router.get("/tecnicos/:id", verificarAutenticacion, obtenerTecnicoPorId);
+router.get("/api/tecnicos/:id", verificarAutenticacion, obtenerTecnicoPorId);
 router.post(
   "/api/tecnicos",
   verificarAutenticacion,
@@ -68,13 +68,13 @@ router.post(
   crearTecnico,
 );
 router.put(
-  "/tecnicos/:id",
+  "/api/tecnicos/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   actualizarTecnico,
 );
 router.delete(
-  "/tecnicos/:id",
+  "/api/tecnicos/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   eliminarTecnico,
@@ -82,13 +82,13 @@ router.delete(
 
 // ── Órdenes ───────────────────────────────────────────
 router.get("/api/ordenes", verificarAutenticacion, obtenerOrdenes);
-router.get("/ordenes/:id", verificarAutenticacion, obtenerOrdenPorId);
-router.get("/ordenes/:id/historial", verificarAutenticacion, obtenerHistorialOrden);
+router.get("/api/ordenes/:id", verificarAutenticacion, obtenerOrdenPorId);
+router.get("/api/ordenes/:id/historial", verificarAutenticacion, obtenerHistorialOrden);
 router.post("/api/ordenes", verificarAutenticacion, crearOrden);
-router.put("/ordenes/:id", verificarAutenticacion, actualizarOrden);
-router.patch("/ordenes/:id/estado", verificarAutenticacion, cambiarEstadoOrden);
+router.put("/api/ordenes/:id", verificarAutenticacion, actualizarOrden);
+router.patch("/api/ordenes/:id/estado", verificarAutenticacion, cambiarEstadoOrden);
 router.delete(
-  "/ordenes/:id",
+  "/api/ordenes/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   eliminarOrden,
@@ -102,7 +102,7 @@ router.get(
   obtenerUsuarios,
 );
 router.get(
-  "/usuarios/:id",
+  "/api/usuarios/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   obtenerUsuarioPorId,
@@ -114,13 +114,13 @@ router.post(
   crearUsuario,
 );
 router.put(
-  "/usuarios/:id",
+  "/api/usuarios/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   actualizarUsuario,
 );
 router.delete(
-  "/usuarios/:id",
+  "/api/usuarios/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   eliminarUsuario,

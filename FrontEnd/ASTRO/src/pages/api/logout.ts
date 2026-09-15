@@ -3,7 +3,7 @@ import { API_URL } from '../../lib/api';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const cookie = request.headers.get('cookie');
-  await fetch(`${API_URL}/api/auth/logout`, {
+  await fetch(`${API_URL}/api/logout`, {
     method: 'POST',
     headers: { Cookie: cookie ?? '' },
   });

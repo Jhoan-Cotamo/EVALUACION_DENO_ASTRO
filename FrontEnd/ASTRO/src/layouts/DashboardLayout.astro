@@ -53,10 +53,9 @@ const rutaActual = new URL(Astro.request.url).pathname;
           const activo = rutaActual === link.href ||
                          (link.href !== '/dashboard' && rutaActual.startsWith(link.href));
           return (
-            
+            <a>
               href={link.href}
               class={`nav-link ${activo ? 'activo' : ''}`}
-            >
               <span class="nav-icono">{link.icono}</span>
               <span>{link.label}</span>
             </a>
