@@ -115,7 +115,7 @@ export async function actualizarCliente(ctx: RouterContext<"/api/clientes/:id">)
   }
 }
 
-export async function eliminarCliente(ctx: RouterContext<"/clientes/:id">) {
+export async function eliminarCliente(ctx: RouterContext<"/api/clientes/:id">) {
   const id = Number(ctx.params.id);
   if (isNaN(id)) {
     ctx.response.status = 400;

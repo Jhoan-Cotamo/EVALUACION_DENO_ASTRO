@@ -36,10 +36,10 @@ router.get("/api/perfil", verificarAutenticacion, perfil);
 // ── Clientes ──────────────────────────────────────────
 router.get("/api/clientes", verificarAutenticacion, obtenerClientes);
 router.get("/api/clientes/:id", verificarAutenticacion, obtenerClientePorId);
-router.post("/clientes", verificarAutenticacion, crearCliente);
+router.post("/api/clientes", verificarAutenticacion, crearCliente);
 router.put("/api/clientes/:id", verificarAutenticacion, actualizarCliente);
 router.delete(
-  "/clientes/:id",
+  "/api/clientes/:id",
   verificarAutenticacion,
   verificarRol("Administrador"),
   eliminarCliente,
