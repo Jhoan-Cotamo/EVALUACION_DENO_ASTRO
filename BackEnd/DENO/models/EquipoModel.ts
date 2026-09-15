@@ -39,11 +39,11 @@ export class EquipoModel {
       "UPDATE equipos SET id_cliente=?, tipo_equipo=?, marca=?, modelo=?, numero_serie=?, descripcion_problema=? WHERE id_equipo=?",
       [datos.id_cliente, datos.tipo_equipo, datos.marca, datos.modelo, datos.numero_serie, datos.descripcion_problema, id]
     );
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 
   async eliminar(id: number): Promise<boolean> {
     const resultado = await conexion.execute("DELETE FROM equipos WHERE id_equipo=?", [id]);
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 }

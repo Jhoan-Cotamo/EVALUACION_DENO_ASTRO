@@ -33,11 +33,11 @@ export class TecnicoModel {
       "UPDATE tecnicos SET nombre=?, documento=?, especialidad=?, telefono=?, estado=? WHERE id_tecnico=?",
       [datos.nombre, datos.documento, datos.especialidad, datos.telefono, datos.estado, id]
     );
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 
   async eliminar(id: number): Promise<boolean> {
     const resultado = await conexion.execute("DELETE FROM tecnicos WHERE id_tecnico=?", [id]);
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 }

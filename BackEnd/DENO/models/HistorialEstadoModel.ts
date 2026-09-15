@@ -36,11 +36,11 @@ export class HistorialEstadoModel {
       "UPDATE historial_estados SET id_orden=?, estado=?, fecha_cambio=? WHERE id_historial=?",
       [datos.id_orden, datos.estado, datos.fecha_cambio, id]
     );
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 
   async eliminar(id: number): Promise<boolean> {
     const resultado = await conexion.execute("DELETE FROM historial_estados WHERE id_historial=?", [id]);
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 }

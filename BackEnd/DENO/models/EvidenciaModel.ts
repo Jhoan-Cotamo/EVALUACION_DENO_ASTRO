@@ -35,11 +35,11 @@ export class EvidenciaModel {
       "UPDATE evidencias SET id_orden=?, ruta_imagen=? WHERE id_evidencia=?",
       [datos.id_orden, datos.ruta_imagen, id]
     );
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 
   async eliminar(id: number): Promise<boolean> {
     const resultado = await conexion.execute("DELETE FROM evidencias WHERE id_evidencia=?", [id]);
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 }

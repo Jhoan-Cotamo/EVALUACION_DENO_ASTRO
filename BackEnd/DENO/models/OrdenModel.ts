@@ -43,6 +43,40 @@ export class OrdenModel {
     return resultado.length ? (resultado[0] as Orden) : null;
   }
 
+  async buscarPorNumero(numero_orden: string): Promise<Orden | null> {
+    const resultado = await conexion.query("SELECT * FROM ordenes WHERE numero_orden = ?", [numero_orden]);
+    return resultado.length ? (resultado[0] as Orden) : null;
+  }
+
   async actualizar(id: number, datos: Partial<Orden>): Promise<boolean> {
     const resultado = await conexion.execute(
-      "UPDATE ordenes SET numero_orden=?, id_cliente=?, id_equipo=?, id_tecnico=?, descripcion_problema=?, estado=?,
+      "UPDATE ordenes SET numero_orden=?, id_cliente=?, id_equipo=?, id_tecnico=?, descripcion_problema=?, estado=?, observaciones=?, valor_estimado=?, valor_final=? WHERE id_orden=?",
+      [
+        datos.numero_orden,
+        datos.id_cliente,
+        datos.id_equipo,
+        datos.id_tecnico,
+        datos.descripcion_problema,
+        datos.estado,
+        datos.observaciones,
+        datos.valor_estimado,
+        datos.valor_final,
+        id
+      ]
+    );
+    return (resultado.affectedRows ?? 0) > 0;
+  }
+
+  async actualizarEstado(id: number, estado: Orden["estado"]): Promise<boolean> {
+    const resultado = await conexion.execute(
+      "UPDATE ordenes SET estado=? WHERE id_orden=?",
+      [estado, id]
+    );
+    return (resultado.affectedRows ?? 0) > 0;
+  }
+
+  async eliminar(id: number): Promise<boolean> {
+    const resultado = await conexion.execute("DELETE FROM ordenes WHERE id_orden=?", [id]);
+    return (resultado.affectedRows ?? 0) > 0;
+  }
+}

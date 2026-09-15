@@ -32,11 +32,11 @@ export class ClienteModel {
       "UPDATE clientes SET nombre_completo=?, documento=?, telefono=?, correo=? WHERE id_cliente=?",
       [datos.nombre_completo, datos.documento, datos.telefono, datos.correo, id]
     );
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 
   async eliminar(id: number): Promise<boolean> {
     const resultado = await conexion.execute("DELETE FROM clientes WHERE id_cliente=?", [id]);
-    return resultado.affectedRows > 0;
+    return (resultado.affectedRows ?? 0) > 0;
   }
 }
