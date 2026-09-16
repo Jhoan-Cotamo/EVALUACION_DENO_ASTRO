@@ -18,6 +18,6 @@ routes.forEach(router =>{
     app.use(router.allowedMethods());
 })
 
-const puerto = Number(Deno.env.get("PORT") ?? "8000");
+const puerto = Number(Deno.env.get("PORT") ?? "8050");
 console.log(`Servidor corriendo por el puerto ${puerto}`);
 app.listen({ port: puerto });
